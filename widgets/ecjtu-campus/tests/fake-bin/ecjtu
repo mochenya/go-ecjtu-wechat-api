@@ -1,0 +1,95 @@
+#!/usr/bin/env bash
+# 离线脱敏模拟 ecjtu CLI（仅用于本地单测与视觉预览，不含任何真实个人数据，绝不访问网络）
+set -euo pipefail
+
+cmd="${1:-}"
+if [[ "$cmd" != "course" ]]; then
+    echo "unexpected subcommand: $cmd" >&2
+    exit 2
+fi
+
+target_date=""
+shift || true
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --date)
+            target_date="${2:-}"
+            shift 2 || true
+            ;;
+        *)
+            shift
+            ;;
+    esac
+done
+
+if [[ -z "${ECJTU_WEIXIN_TOKEN:-}" ]]; then
+    echo "未配置环境变量 ECJTU_WEIXIN_TOKEN" >&2
+    exit 2
+fi
+
+if [[ -n "${ECJTU_FAKE_LOG:-}" ]]; then
+    printf '%s\n' "${target_date}" >> "${ECJTU_FAKE_LOG}"
+fi
+
+mode="${ECJTU_FAKE_MODE:-normal}"
+
+if [[ -n "${ECJTU_FAKE_DELAY_MS:-}" ]]; then
+    python3 -c "import time; time.sleep(int('${ECJTU_FAKE_DELAY_MS}') / 1000.0)" 2>/dev/null || sleep 0.2
+fi
+
+# 支持按日期分别延迟（用于测试切换日期时旧请求晚返回不得覆盖新结果）
+if [[ "${mode}" == "race_today_slow" ]]; then
+    if [[ "${target_date}" == "${ECJTU_FAKE_TODAY:-}" ]]; then
+        python3 -c "import time; time.sleep(0.35)" 2>/dev/null || sleep 0.4
+        cat <<EOF
+{"date":"${target_date}","weekday":1,"week":3,"courses":[{"name":"旧请求大学英语Ⅲ","status":"上课","timeText":"1-8 1,2","weeks":[{"start":1,"end":8}],"periods":[1,2],"location":"31-422","teacher":"教师B"}]}
+EOF
+        exit 0
+    else
+        cat <<EOF
+{"date":"${target_date}","weekday":2,"week":3,"courses":[{"name":"新请求操作系统","status":"上课","timeText":"3-16 3,4","weeks":[{"start":3,"end":16}],"periods":[3,4],"location":"教14栋203","teacher":"教师D"}]}
+EOF
+        exit 0
+    fi
+fi
+
+case "${mode}" in
+    normal)
+        if [[ -n "${ECJTU_FAKE_TOMORROW:-}" && "${target_date}" == "${ECJTU_FAKE_TOMORROW}" ]]; then
+            cat <<EOF
+{"date":"${target_date}","weekday":2,"week":3,"courses":[{"name":"数据结构与算法","status":"上课","timeText":"1-16 1,2","weeks":[{"start":1,"end":16}],"periods":[1,2],"location":"教31栋208","teacher":"教师D"},{"name":"计算机网络","status":"实验","timeText":"3-10 5,6","weeks":[{"start":3,"end":10}],"periods":[5,6],"location":"网络工程实验中心(教26栋302)","teacher":"教师E"}]}
+EOF
+        else
+            cat <<EOF
+{"date":"${target_date:-2026-09-14}","weekday":1,"week":3,"courses":[{"name":"大学英语Ⅲ","status":"上课","timeText":"1-8 1,2","weeks":[{"start":1,"end":8}],"periods":[1,2],"location":"31-422","teacher":"教师B"},{"name":"体育Ⅲ","status":"上课","timeText":"1-8,10-19 3,4","weeks":[{"start":1,"end":8},{"start":10,"end":19}],"periods":[3,4],"location":"北区田径场18","teacher":"教师A"},{"name":"高等数学A(下)","status":"上课","timeText":"1-16 5,6","weeks":[{"start":1,"end":16}],"periods":[5,6],"location":"教12栋105","teacher":"教师D"},{"name":"数据库系统原理","status":"实验","timeText":"3 7,8","weeks":[{"start":3,"end":3}],"periods":[7,8],"location":"软件设计实验室(教26栋403; 教26栋404)","teacher":"教师C"},{"name":"线性代数阶段测验","status":"考试","timeText":"3 9,10","weeks":[{"start":3,"end":3}],"periods":[9,10],"location":"教31栋阶梯教室101","teacher":"教师B"},{"name":"铁路运输导论","status":"上课","timeText":"1-12 11,12","weeks":[{"start":1,"end":12}],"periods":[11,12],"location":"教21栋305","teacher":""}]}
+EOF
+        fi
+        exit 0
+        ;;
+    empty)
+        cat <<EOF
+{"date":"${target_date:-2026-09-14}","weekday":6,"week":3,"courses":[]}
+EOF
+        exit 0
+        ;;
+    exit3)
+        echo "phase=error kind=notbound err=\"course.Day: notbound token=${ECJTU_WEIXIN_TOKEN}\"" >&2
+        exit 3
+        ;;
+    exit4)
+        echo "phase=error kind=transport err=\"course.Day: context deadline exceeded\"" >&2
+        exit 4
+        ;;
+    exit5)
+        echo "phase=error kind=parse err=\"course.Day: date line not found\"" >&2
+        exit 5
+        ;;
+    badjson)
+        echo "{not-valid-json"
+        exit 0
+        ;;
+    *)
+        echo "unknown fake mode: ${mode}" >&2
+        exit 2
+        ;;
+esac

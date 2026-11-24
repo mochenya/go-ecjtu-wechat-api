@@ -1,0 +1,23 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "Jensen Chan"
+            }
+        ],
+        "BugReportUrl": "https://github.com/mochenya/go-ecjtu-wechat-api/issues",
+        "Category": "Date and Time",
+        "Description": "Today and tomorrow class schedule for ECJTU in a Liquid Glass Plasma widget",
+        "Description[zh_CN]": "华东交通大学今明课表查询，支持面板弹窗与桌面常驻的液态玻璃组件",
+        "EnabledByDefault": true,
+        "Icon": "view-calendar-day",
+        "Id": "io.github.mochenya.ecjtucampus",
+        "License": "MIT",
+        "Name": "ECJTU Campus",
+        "Name[zh_CN]": "华交校园",
+        "Version": "0.1.0",
+        "Website": "https://github.com/mochenya/go-ecjtu-wechat-api"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0"
+}

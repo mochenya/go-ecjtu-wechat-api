@@ -6,3 +6,4 @@ bin/
 coverage.out
 .task/*/evidence/
 skills-lock.json
+widgets/*/build/

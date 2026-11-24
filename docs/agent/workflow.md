@@ -17,6 +17,10 @@ make vet            # go vet ./...
 make test           # go test -race ./...
 make gate           # fmt、vet、test、依赖整理与空白检查
 go test ./internal/ecjtu/course -run TestParseDay -v
+
+# KDE Plasma 6 小部件（离线构建与 Qt Test，详参 widgets/ecjtu-campus/README.md）
+cmake -S widgets/ecjtu-campus -B widgets/ecjtu-campus/build -G Ninja && cmake --build widgets/ecjtu-campus/build
+ctest --test-dir widgets/ecjtu-campus/build --output-on-failure
 ```
 
 `make gate` 中的 `git diff` 不能检查尚未被 Git 跟踪的文件；遇到新文件需另行核对。

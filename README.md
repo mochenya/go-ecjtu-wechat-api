@@ -131,6 +131,17 @@ ecjtu --version
 - 不输出完整 URL query 与原始 HTML 正文，上游 500 堆栈直接丢弃。
 - `testdata/` 仅包含脱敏后的测试样本，不含真实个人数据。
 
+## KDE Plasma 6 小部件
+
+仓库内置「华交校园」（`widgets/ecjtu-campus`）KDE Plasma 6 液态玻璃课表小部件，通过本地 `ecjtu` CLI 异步查询今明课表，支持面板弹窗与桌面常驻。
+
+```bash
+./widgets/ecjtu-campus/scripts/install.sh --reload   # 构建、用户级安装到 ~/.local 并重载面板
+./widgets/ecjtu-campus/scripts/uninstall.sh          # 卸载小部件与插件
+```
+
+架构说明、脚本参数与离线预览见 [widgets/ecjtu-campus/README.md](widgets/ecjtu-campus/README.md)。
+
 ## 开发与测试
 
 ```bash
