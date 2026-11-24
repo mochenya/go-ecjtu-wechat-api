@@ -1,0 +1,8 @@
+.agents
+.task
+.env
+bin/
+/ecjtu
+coverage.out
+.task/*/evidence/
+skills-lock.json
