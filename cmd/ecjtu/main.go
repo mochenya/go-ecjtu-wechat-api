@@ -1,5 +1,5 @@
 // Command ecjtu 是唯一的 main：按需读取环境变量装配客户端并委托 internal/cli 执行命令。
-// 单静态二进制：CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X main.buildTime=..."。
+// 单静态二进制的构建参数见 Makefile。
 package main
 
 import (
@@ -13,8 +13,8 @@ import (
 	ecjtu "github.com/mochenya/go-ecjtu-wechat-api/internal/ecjtu/client"
 )
 
-// version 是当前固定发布版本；项目尚未采用 Git 标签，版本变更时直接修改这里。
-const version = "v0.1.0"
+// version 由发布构建在链接时注入；普通构建标记为开发版。
+var version = "dev"
 
 // buildTime 由 Makefile 在链接时注入，直接执行 go build 时为 unknown。
 var buildTime = "unknown"

@@ -24,7 +24,7 @@
 | 查询子命令（`course`/`score`/`exam`/`classroom`） | `--format json\|text` | `json` | 未知值退出码 2 |
 | 全局 | `--timeout` | 未显式给值时用 `ECJTU_TIMEOUT`（默认 `15s`） | 正值覆盖 env；0 使用配置值；负值退出码 2；预算覆盖整个命令 |
 | 全局 | `-v`, `--verbose` | false | 只加诊断到 stderr，不改 stdout |
-| 全局 | `--version` | — | 输出固定版本、UTC 编译时间、Go 版本、目标平台和编译器；当前版本为 `v0.1.0`，直接 `go build` 时编译时间为 `unknown` |
+| 全局 | `--version` | — | 输出版本、UTC 编译时间、Go 版本、目标平台和编译器；发布构建注入 Git 标签，普通构建默认为 `dev`，直接 `go build` 时编译时间为 `unknown` |
 | 子命令 | `help`、`completion <shell>` | — | cobra 自带；与 `--version`、`--help` 都不需要凭证 |
 
 ## 帮助与提示文案

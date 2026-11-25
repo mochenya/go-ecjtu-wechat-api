@@ -2,9 +2,10 @@
 # 逐条对应关系写在每行右边：`make gate` 与 CI 跑的是同一串，本地不存在第二套真相。
 
 GO      ?= go
-BIN     := bin/ecjtu
+BIN     ?= bin/ecjtu
+VERSION ?= dev
 BUILD_TIME ?= $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
-LD      = -ldflags "-s -w -X main.buildTime=$(BUILD_TIME)"
+LD      = -ldflags "-s -w -X main.version=$(VERSION) -X main.buildTime=$(BUILD_TIME)"
 
 .PHONY: help build release fmt vet test gate live clean
 
@@ -12,7 +13,7 @@ help: ## 列出全部目标
 	@grep -E '^[a-z]+:.*## ' $(MAKEFILE_LIST) | sed -E 's/^([a-z]+):.*## (.*)$$/  make \1\t\2/'
 
 build: ## 本机构建并注入 UTC 编译时间：bin/ecjtu
-	$(GO) build -trimpath -ldflags "-X main.buildTime=$(BUILD_TIME)" -o $(BIN) ./cmd/ecjtu
+	$(GO) build -trimpath -ldflags "-X main.version=$(VERSION) -X main.buildTime=$(BUILD_TIME)" -o $(BIN) ./cmd/ecjtu
 
 release: ## 发布构建并注入 UTC 编译时间：单个无 cgo 二进制
 	CGO_ENABLED=0 $(GO) build -trimpath $(LD) -o $(BIN) ./cmd/ecjtu

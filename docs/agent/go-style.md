@@ -50,7 +50,7 @@
 ## 结构与禁止项
 
 - 禁止 `init()` 做实际工作；测试里也不靠 `TestMain` 建 fixture。
-- 禁止包级可变状态。`var ErrX = errors.New(...)` 只允许出现在确实需要跨包识别的分类里，本仓用 `Kind` 枚举代替导出 sentinel。`cmd/ecjtu` 的 `buildTime` 是链接时注入、运行时只读的构建元数据例外。
+- 禁止包级可变状态。`var ErrX = errors.New(...)` 只允许出现在确实需要跨包识别的分类里，本仓用 `Kind` 枚举代替导出 sentinel。`cmd/ecjtu` 的 `version` 和 `buildTime` 是链接时注入、运行时只读的构建元数据例外。
 - 接口只在有第二个实现或需要 fake 时才定义，不为「可测试性」预先造接口。
 - 不内嵌结构体来模拟继承；内嵌只为组合行为。
 - 成功的查询结果中，课表 `Courses` 与成绩、考试 `Items` 必须为非 nil 切片，空结果输出 `[]`。

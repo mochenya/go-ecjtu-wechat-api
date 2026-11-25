@@ -124,7 +124,7 @@ func TestRunEndToEnd(t *testing.T) {
 			args:          []string{"--version"},
 			fixture:       "course-normal-week3-monday.html",
 			wantCode:      0,
-			wantStdout:    []string{"ecjtu v0.1.0", "编译时间 (UTC): unknown", "Go 版本:", "平台:", "编译器:"},
+			wantStdout:    []string{"ecjtu dev", "编译时间 (UTC): unknown", "Go 版本:", "平台:", "编译器:"},
 			wantNoRequest: true,
 		},
 	}

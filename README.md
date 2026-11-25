@@ -13,7 +13,9 @@
 
 ## 安装与构建
 
-需要 Go 1.27.1 或更高版本。
+从 [GitHub Releases](https://github.com/mochenya/go-ecjtu-wechat-api/releases) 下载对应系统和架构的压缩包，解压后运行其中的 `ecjtu`（Windows 为 `ecjtu.exe`）。`checksums.txt` 提供各压缩包的 SHA-256 校验值。
+
+从源码构建需要 Go 1.27.1 或更高版本；普通源码构建显示版本 `dev`，发布包显示对应的 Git 标签。
 
 ```bash
 # 直接安装

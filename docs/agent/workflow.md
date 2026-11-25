@@ -10,8 +10,8 @@
 ## 常用命令
 
 ```sh
-make build          # 构建 bin/ecjtu，并注入 UTC 编译时间
-make release        # CGO_ENABLED=0 发布构建，并注入 UTC 编译时间
+make build          # 构建 bin/ecjtu，并注入 UTC 编译时间；版本默认为 dev
+make release        # CGO_ENABLED=0 发布构建，可用 VERSION 指定版本
 make fmt            # 检查 gofmt
 make vet            # go vet ./...
 make test           # go test -race ./...
@@ -26,6 +26,21 @@ ctest --test-dir widgets/ecjtu-campus/build --output-on-failure
 `make gate` 中的 `git diff` 不能检查尚未被 Git 跟踪的文件；遇到新文件需另行核对。
 `make gate` 会执行 `go mod tidy` 并可能修改 `go.mod`、`go.sum`；运行前先检查已有改动，事后核对依赖差异。当前仓库若文件尚未跟踪，`git diff` 也无法证明依赖文件未变化，应自行比较。
 默认测试使用本地假上游。`ECJTU_LIVE` 非空时人工上游测试会运行，因此自动检查前应确保该变量未设置。
+
+## CI 与发布
+
+推送分支或创建、更新 PR 时，CI 在 Linux 上运行 `make gate`，并在 Windows 和 macOS 上运行离线 Go 测试。CI 不配置 `ECJTU_LIVE`，不请求学校服务器。
+
+推送符合 `v主版本.次版本.修订号` 的标签（如 `v0.1.0`）会触发发布工作流：运行 `make gate`，交叉编译 Windows、Linux 和 macOS 的 amd64、arm64 程序，打包并生成 SHA-256 校验文件，最后创建 GitHub Release。`v*` 标签会启动工作流，不符合上述格式的标签会在构建前失败；预发布标签目前不支持。发布版本使用标签，所有包使用同一个 UTC 编译时间。交叉编译不等于在所有目标设备上运行测试。
+
+确认要发布后，在已连接 GitHub 的仓库中，对准备发布的提交执行：
+
+```sh
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+推送标签会自动创建公开或私有 Release（取决于仓库可见性）。发布前需确认目标提交、版本及仓库权限；发布后到 Actions 和 Releases 检查结果。不要移动已发布的标签；若需要修复，发布新版本。发布工作流需要仓库允许 Actions 使用 `GITHUB_TOKEN` 写入内容。
 
 ## 手动上游测试
 
