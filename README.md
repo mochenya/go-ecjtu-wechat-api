@@ -51,6 +51,12 @@ make release   # 无 CGO 单静态二进制
 
 ### AI Skill
 
+安装 [ecjtu-cli Skill](skills/ecjtu-cli/SKILL.md)：
+
+```sh
+npx skills add mochenya/go-ecjtu-wechat-api --skill ecjtu-cli
+```
+
 将以下提示词发送给 AI Agent，安装 Skill 和 CLI：
 
 ```text
