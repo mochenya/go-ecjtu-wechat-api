@@ -27,6 +27,7 @@ ecjtu exam                                        # 默认学期考试
 ecjtu exam --term 2025.2                          # 指定学期考试
 ecjtu classroom options                           # 空教室查询可选条件
 ecjtu classroom search --week 3                   # 指定教学周
+ecjtu classroom search --week 3 --room 31         # 按教室名子串筛选（忽略大小写）
 ecjtu classroom search --week 3 --weekday 星期四 --period 1,2
 ```
 

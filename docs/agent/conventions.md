@@ -20,7 +20,7 @@
 | `ecjtu score` | `--term YYYY.N` | 上游默认学期 | 年份为四位数字，期数为数字；非法时退出码 2 |
 | `ecjtu exam` | `--term YYYY.N` | 上游默认学期 | 同上 |
 | `ecjtu classroom` / `classroom options` | `--format json\|text` | `json` | 一次匿名 GET 探测上游选项；`classroom` 等同 `classroom options` |
-| `ecjtu classroom search` | `--term YYYY.N`、`--week`、`--weekday`、`--period` | 学期/星期/节次使用表单默认值，周次无默认 | `--week` 必须显式指定；可用值以同次 Options 为准 |
+| `ecjtu classroom search` | `--term YYYY.N`、`--week`、`--weekday`、`--period`、`--room` | 学期/星期/节次使用表单默认值，周次无默认，`--room` 默认不筛选 | `--week` 必须显式指定；可用值以同次 Options 为准；`--room` 在本地按教室名子串筛选（忽略大小写），显式传空或纯空白退出码 2 |
 | 查询子命令（`course`/`score`/`exam`/`classroom`） | `--format json\|text` | `json` | 未知值退出码 2 |
 | 全局 | `--timeout` | 未显式给值时用 `ECJTU_TIMEOUT`（默认 `15s`） | 正值覆盖 env；0 使用配置值；负值退出码 2；预算覆盖整个命令 |
 | 全局 | `-v`, `--verbose` | false | 只加诊断到 stderr，不改 stdout |
@@ -77,13 +77,13 @@ JSON 由 `render.JSON` 输出：`json.MarshalIndent` 两空格缩进 + 结尾换
 | `score` | `张三 2025.2（共 15 门）`，页头缺失时退化为 `共 15 门` | `课程 代码 学分 期末 重考 重修 性质` |
 | `exam` | 同 `score`，量词换成「场」 | `日期 时间 周次 地点 课程 性质 人数` |
 | `classroom options` | 可选学期、表单选中学期、周次/星期/节次选项及默认值 | 多行选项摘要 |
-| `classroom search` | 学期、周次、星期、节次和结果数量 | `教室 教室类型 座位数` |
+| `classroom search` | 学期、周次、星期、节次和结果数量（带 `--room` 时附教室名筛选词） | `教室 教室类型 座位数` |
 
 - 列间固定两个空格，行尾不补齐；表头下有 `-` 组成的分隔线。
 - 显示宽度：W/F 与 U+2000 到 U+2FFF 的 Ambiguous（`Ⅰ Ⅱ Ⅲ`）计 2，`¤§¨°±×÷` 计 2，组合记号（Mn/Me/Cf）与控制字符计 0，其余 1。
 - `null` 标量列渲染成 `-`；整数学分补 `.0`（对齐上游 `学分:4.0`）；课名列合并成 `大学英语Ⅲ(上课)`；节次序列合并成 `1-2,5,7-8节`。
 - 考试 `备注` 非空时在该行下方续行，缩进到「课程」列起点；`className` 不进表，只在 JSON 里。
-- 空结果的句子（`当天无课。`/`该学期无成绩。`/`该学期无考试安排。`/`该条件下没有空闲教室。`）走 stdout，属答案本身；其余诊断与错误一律 stderr。
+- 空结果的句子（`当天无课。`/`该学期无成绩。`/`该学期无考试安排。`/`该条件下没有空闲教室。`/带 `--room` 时为 `该条件下没有教室名包含「<关键词>」的空闲教室。`）走 stdout，属答案本身；其余诊断与错误一律 stderr。
 
 空教室 Options 中 `selectedTerm` 表示该次表单选中的学期，不等价于校历当前学期。表单默认周次只用于描述浏览器默认行为；CLI 搜索仍要求显式 `--week`，不把表单首项推断为今天的教学周。`weekday` 与 `period` 在 JSON 中直接使用上游枚举值（星期中文文本与 `1,2` 等节次串）。
 
@@ -98,7 +98,7 @@ phase=error kind=notbound err="course.Day: notbound"
 ```
 
 - `domain` 是 `op` 的包名前缀，`kind` 取 `PageKind`/`Kind` 的小写英文标签；`attempts` 含首次在内。
-- 条数一致性告警只在 `--verbose` 下出，不一致**不**升级为错误。
+- 条数一致性告警只在 `--verbose` 下出，不一致**不**升级为错误；`classroom search` 的一致性校验在本地 `--room` 筛选之前执行。
 - `phase=error` 行仅 `--verbose` 时追加；`err=` 是英文错误串，openid 已按前 4 位 + `***` 脱敏。
 - 未被 `Kind` 覆盖的错误（配置错误与 cobra/pflag 用法错误）在 `phase=error` 里一律报 `kind=usage`。
 - 命令树在 `RunE` 之前就能工作：`--help`/`--version`/`completion` 不读环境变量。

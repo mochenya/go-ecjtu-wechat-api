@@ -233,6 +233,123 @@ func TestClassroomSearchRequiresWeekWithoutRequest(t *testing.T) {
 	}
 }
 
+func TestClassroomSearchRejectsBlankRoomWithoutRequest(t *testing.T) {
+	for _, raw := range []string{"", "   ", "\t\n"} {
+		t.Run("raw="+raw, func(t *testing.T) {
+			called := false
+			got := runPublicWith(t, func() (cli.Assembly, error) {
+				called = true
+				return cli.Assembly{}, errors.New("assembler should not be called")
+			}, "classroom", "search", "--week", "3", "--room", raw)
+			if got.code != cli.ExitUsage || called || !strings.Contains(got.stderr, "--room 不能为空白") {
+				t.Fatalf("code=%d called=%v stderr=%q", got.code, called, got.stderr)
+			}
+			if got.stdout != "" {
+				t.Fatalf("失败路径不应写 stdout，实得 %q", got.stdout)
+			}
+		})
+	}
+}
+
+func TestClassroomSearchFiltersByRoomName(t *testing.T) {
+	// 故意把其他楼栋的教室类型写成「多媒体教室」、座位数写成 31，验证 --room 只匹配教室名。
+	resultPage := []byte(`<!doctype html>
+<html>
+<head><title>空闲教室使用情况</title></head>
+<body>
+<div class="text">共有 <mark>3</mark> 间空闲教室</div>
+<div class="tb">
+  <table>
+    <tr><th>教室</th><th>教室类型</th><th>座位数</th></tr>
+    <tr><td>31-A101</td><td>普通教室</td><td>120</td></tr>
+    <tr><td>教31栋422</td><td>多媒体教室</td><td>90</td></tr>
+    <tr><td>教一-203</td><td>多媒体教室</td><td>31</td></tr>
+  </table>
+</div>
+</body>
+</html>`)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			_, _ = w.Write(resultPage)
+			return
+		}
+		_, _ = w.Write(testsupport.Fixture(t, "classroom-options-synthetic.html"))
+	}))
+	defer srv.Close()
+
+	assemble := func() (cli.Assembly, error) {
+		return cli.Assembly{PublicClient: client.NewPublic(client.PublicConfig{BaseURL: srv.URL})}, nil
+	}
+
+	tests := []struct {
+		name          string
+		args          []string
+		wantStdout    []string
+		notWantStdout []string
+		notWantStderr []string
+	}{
+		{
+			name:          "按楼栋子串筛选且不误匹配座位数/json",
+			args:          []string{"classroom", "search", "--week", "3", "--room", " 31 "},
+			wantStdout:    []string{`"count": 2`, `"31-A101"`, `"教31栋422"`},
+			notWantStdout: []string{`"教一-203"`, `"room":`},
+		},
+		{
+			name:          "忽略大小写匹配/json",
+			args:          []string{"classroom", "search", "--week", "3", "--room", "31-a"},
+			wantStdout:    []string{`"count": 1`, `"31-A101"`},
+			notWantStdout: []string{`"教31栋422"`, `"教一-203"`},
+		},
+		{
+			name:          "不匹配教室类型字段/json",
+			args:          []string{"classroom", "search", "--week", "3", "--room", "多媒体"},
+			wantStdout:    []string{`"count": 0`, `"rooms": []`},
+			notWantStdout: []string{`"教31栋422"`, `"教一-203"`},
+		},
+		{
+			name:          "筛选命中/text",
+			args:          []string{"classroom", "search", "--week", "3", "--room", "31", "--format", "text"},
+			wantStdout:    []string{"2026.1 第3周 星期四 1,2（教室含 31，共 2 间）", "31-A101", "教31栋422"},
+			notWantStdout: []string{"教一-203"},
+		},
+		{
+			name:       "筛选零命中/text",
+			args:       []string{"classroom", "search", "--week", "3", "--room", "99", "--format", "text"},
+			wantStdout: []string{"该条件下没有教室名包含「99」的空闲教室。"},
+		},
+		{
+			name:          "verbose筛选后不误报条数不一致",
+			args:          []string{"classroom", "search", "--week", "3", "--room", "31-a", "--verbose"},
+			wantStdout:    []string{`"count": 1`, `"31-A101"`},
+			notWantStderr: []string{"warn=count-mismatch"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := runPublicWith(t, assemble, tt.args...)
+			if got.code != cli.ExitOK {
+				t.Fatalf("退出码 = %d，期望 %d\nstderr=%q", got.code, cli.ExitOK, got.stderr)
+			}
+			for _, want := range tt.wantStdout {
+				if !strings.Contains(got.stdout, want) {
+					t.Fatalf("stdout 缺少 %q:\n%s", want, got.stdout)
+				}
+			}
+			for _, bad := range tt.notWantStdout {
+				if strings.Contains(got.stdout, bad) {
+					t.Fatalf("stdout 不应包含 %q:\n%s", bad, got.stdout)
+				}
+			}
+			for _, bad := range tt.notWantStderr {
+				if strings.Contains(got.stderr, bad) {
+					t.Fatalf("stderr 不应包含 %q:\n%s", bad, got.stderr)
+				}
+			}
+		})
+	}
+}
+
 func TestExitCodeMatrix(t *testing.T) {
 	fixture := func(name string) []byte { return testsupport.Fixture(t, name) }
 	tests := []struct {
@@ -550,7 +667,7 @@ func TestHelpAndVersionNeedNoCredentials(t *testing.T) {
 		{[]string{"exam", "--help"}, []string{"--term", "--format", "ECJTU_WEIXIN_TOKEN", "考试安排"}, nil},
 		{[]string{"classroom", "--help"}, []string{"options", "search", "无需配置 ECJTU_WEIXIN_TOKEN", "等同于 ecjtu classroom options"}, nil},
 		{[]string{"classroom", "options", "--help"}, []string{"无需配置 ECJTU_WEIXIN_TOKEN", "ecjtu classroom options --format text"}, nil},
-		{[]string{"classroom", "search", "--help"}, []string{"--week", "必填", "1,2 / 3,4 / 5,6 / 7,8 / 9,10 / 11,12", "无需配置 ECJTU_WEIXIN_TOKEN"}, nil},
+		{[]string{"classroom", "search", "--help"}, []string{"--week", "--room", "必填", "1,2 / 3,4 / 5,6 / 7,8 / 9,10 / 11,12", "无需配置 ECJTU_WEIXIN_TOKEN"}, nil},
 		{[]string{"--version"}, []string{"ecjtu test"}, nil},
 		{[]string{"completion", "--help"}, []string{"bash", "zsh"}, nil},
 	} {

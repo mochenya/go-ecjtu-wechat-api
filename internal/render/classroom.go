@@ -21,14 +21,18 @@ func ClassroomOptions(options classroom.Options) string {
 	return strings.Join(lines, "\n")
 }
 
-// Classrooms 渲染空教室结果表。
-func Classrooms(result classroom.Result) string {
+// Classrooms 渲染空教室结果表；roomFilter 非空时在首行附上教室名筛选关键词。
+func Classrooms(result classroom.Result, roomFilter string) string {
 	t := newTable("教室", "教室类型", "座位数")
 	for _, room := range result.Rooms {
 		t.add(room.Name, room.Type, strconv.Itoa(room.SeatCount))
 	}
+	summary := "共 " + strconv.Itoa(result.Count) + " 间"
+	if roomFilter != "" {
+		summary = "教室含 " + roomFilter + "，" + summary
+	}
 	head := result.Term + " 第" + strconv.Itoa(result.Week) + "周 " +
-		string(result.Weekday) + " " + string(result.Period) + "（共 " + strconv.Itoa(result.Count) + " 间）"
+		string(result.Weekday) + " " + string(result.Period) + "（" + summary + "）"
 	return head + "\n" + t.String()
 }
 

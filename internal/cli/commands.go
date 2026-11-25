@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -123,11 +124,15 @@ func (a *app) classroomCommand() *cobra.Command {
 	search := &cobra.Command{
 		Use:     "search",
 		Short:   "按学期、周次、星期和节次查询空闲教室",
-		Long:    "按条件查询空闲教室，无需配置 ECJTU_WEIXIN_TOKEN。\n必须显式指定 --week，未指定的其余条件沿用本次表单默认值。",
-		Example: "  ecjtu classroom search --week 3\n  ecjtu classroom search --term 2026.1 --week 3 --weekday 星期四 --period 1,2 --format text",
+		Long:    "按条件查询空闲教室，无需配置 ECJTU_WEIXIN_TOKEN。\n必须显式指定 --week，未指定的其余条件沿用本次表单默认值；可用 --room 按教室名子串筛选结果。",
+		Example: "  ecjtu classroom search --week 3 --room 31 --format text\n  ecjtu classroom search --term 2026.1 --week 3 --weekday 星期四 --period 1,2",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			input, err := a.resolveClassroomInput()
+			if err != nil {
+				return err
+			}
+			roomFilter, err := a.resolveClassroomRoom(cmd.Flags().Changed("room"))
 			if err != nil {
 				return err
 			}
@@ -136,8 +141,12 @@ func (a *app) classroomCommand() *cobra.Command {
 				if err != nil {
 					return err
 				}
+				// 条数一致性告警比对上游页面声明数与解析条数，必须在本地筛选之前执行。
 				a.warnCountMismatch("classroom", result.PageCount, result.Count)
-				return a.emitClassroom(result)
+				if roomFilter != "" {
+					result = filterClassroomByName(result, roomFilter)
+				}
+				return a.emitClassroom(result, roomFilter)
 			})
 		},
 	}
@@ -145,6 +154,7 @@ func (a *app) classroomCommand() *cobra.Command {
 	search.Flags().IntVar(&a.fl.classroomWeek, "week", 0, "周次（必填，正整数），可先运行 ecjtu classroom options 查看可选范围")
 	search.Flags().StringVar(&a.fl.classroomWeekday, "weekday", "", "星期一至星期日，缺省使用表单默认值")
 	search.Flags().StringVar(&a.fl.classroomPeriod, "period", "", "连续两节（可选 1,2 / 3,4 / 5,6 / 7,8 / 9,10 / 11,12），缺省使用表单默认值")
+	search.Flags().StringVar(&a.fl.classroomRoom, "room", "", "按教室名子串筛选（忽略大小写，如 31），缺省返回全部空闲教室")
 	cmd.AddCommand(search)
 	return cmd
 }
@@ -179,6 +189,30 @@ func (a *app) resolveClassroomInput() (classroom.Input, error) {
 		return classroom.Input{}, &inputError{message: msgBadClassroomPeriod, cause: fmt.Errorf("period %q is invalid", period)}
 	}
 	return classroom.Input{Term: term, Week: a.fl.classroomWeek, Weekday: weekday, Period: period}, nil
+}
+
+func (a *app) resolveClassroomRoom(changed bool) (string, error) {
+	if !changed {
+		return "", nil
+	}
+	keyword := strings.TrimSpace(a.fl.classroomRoom)
+	if keyword == "" {
+		return "", &inputError{message: msgBadClassroomRoom, cause: errors.New("room filter must not be blank")}
+	}
+	return keyword, nil
+}
+
+func filterClassroomByName(r classroom.Result, keyword string) classroom.Result {
+	needle := strings.ToLower(keyword)
+	matched := make([]classroom.Room, 0, len(r.Rooms))
+	for _, room := range r.Rooms {
+		if strings.Contains(strings.ToLower(room.Name), needle) {
+			matched = append(matched, room)
+		}
+	}
+	r.Rooms = matched
+	r.Count = len(matched)
+	return r
 }
 
 func isClassroomWeekday(weekday classroom.Weekday) bool {
@@ -263,14 +297,17 @@ func (a *app) emitExam(r exam.Result) error {
 	return a.println(render.Exam(r))
 }
 
-func (a *app) emitClassroom(r classroom.Result) error {
+func (a *app) emitClassroom(r classroom.Result, roomFilter string) error {
 	if a.fl.format == "json" {
 		return render.JSON(a.deps.Stdout, r)
 	}
 	if len(r.Rooms) == 0 {
+		if roomFilter != "" {
+			return a.println(fmt.Sprintf(msgEmptyClassroomFiltered, roomFilter))
+		}
 		return a.println(msgEmptyClassroom)
 	}
-	return a.println(render.Classrooms(r))
+	return a.println(render.Classrooms(r, roomFilter))
 }
 
 // warnCountMismatch 在 --verbose 下比对页面自带条数与解析条数；不一致只警告，不升级为错误。

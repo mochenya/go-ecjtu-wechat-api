@@ -49,6 +49,7 @@ type flags struct {
 	classroomWeek    int
 	classroomWeekday string
 	classroomPeriod  string
+	classroomRoom    string
 }
 
 type app struct {

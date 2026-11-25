@@ -106,7 +106,7 @@ ecjtu exam --term 2025.1 --format text
 
 # 空闲教室（无需 ECJTU_WEIXIN_TOKEN）
 ecjtu classroom options --format text                 # 等同于 ecjtu classroom
-ecjtu classroom search --week 3 --format text
+ecjtu classroom search --week 3 --room 31 --format text
 ecjtu classroom search --term 2026.1 --week 3 --weekday 星期四 --period 1,2
 
 # 诊断与辅助
@@ -171,6 +171,7 @@ ecjtu --version
 | `score` / `exam` | `--term <YYYY.N>` | 上游默认学期 | 查询学期，如 `2025.2` |
 | `classroom search` | `--week <int>` | 必填 | 教学周次（通过 `ecjtu classroom options` 查看范围） |
 | `classroom search` | `--term` / `--weekday` / `--period` | 表单默认值 | 学期、星期一至星期日、节次（`1,2` / `3,4` / `5,6` / `7,8` / `9,10` / `11,12`） |
+| `classroom search` | `--room <关键词>` | 不筛选 | 在本地按教室名子串筛选（忽略大小写，如 `--room 31`） |
 
 ### 退出码
 
