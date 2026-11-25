@@ -23,6 +23,13 @@
 
 从 [GitHub Releases](https://github.com/mochenya/go-ecjtu-wechat-api/releases) 下载对应平台与架构的压缩包，解压后运行 `ecjtu`（Windows 为 `ecjtu.exe`）。各压缩包的 SHA-256 校验值见 `checksums.txt`。
 
+Linux 和 macOS 安装或更新：
+
+```sh
+curl -fsSLo install-ecjtu.sh https://raw.githubusercontent.com/mochenya/go-ecjtu-wechat-api/main/scripts/install.sh
+sh install-ecjtu.sh
+```
+
 ### Go Install
 
 需要 Go 1.27.1 及以上版本：
@@ -42,15 +49,45 @@ make build     # 产出 bin/ecjtu
 make release   # 无 CGO 单静态二进制
 ```
 
+### AI Skill
+
+将以下提示词发送给 AI Agent，安装 Skill 和 CLI：
+
+```text
+请阅读 https://github.com/mochenya/go-ecjtu-wechat-api/blob/main/README.md，安装 ecjtu-cli Skill 和 ecjtu CLI，并引导我获取和配置 OpenID。
+```
+
 ## 快速开始
 
 ### 1. 配置凭证
 
 `course`、`score`、`exam` 通过系统环境变量读取教务系统绑定的微信 OpenID；`classroom` 为匿名查询，无需配置。程序不读取 `.env` 文件。
 
-```bash
-export ECJTU_WEIXIN_TOKEN='你的教务绑定 OpenID'
+**获取 OpenID：**
+
+1. 打开微信中的「华交教务」公众号，确保已绑定教务账号。
+2. 在菜单中选择「师生服务」→「我的课表」。
+3. 在课表页面选择「用默认浏览器打开」，查看浏览器地址栏。
+4. 找到地址中的 `weiXinID=`，复制等号后面的值；若后面还有 `&` 和其他参数，只复制到 `&` 之前。这个值就是 `ECJTU_WEIXIN_TOKEN`，不包含 `weiXinID=`。
+
+**持久配置：**
+
+Linux 和 macOS 用户，将下面一行加入自己使用的 shell 配置文件：zsh 使用 `~/.zshrc`，bash 通常使用 `~/.bashrc`（macOS 的登录 bash 可使用 `~/.bash_profile`）。把示例中的文字替换为自己的 OpenID，然后重新打开终端。
+
+```sh
+export ECJTU_WEIXIN_TOKEN='你的 OpenID'
 ```
+
+Windows PowerShell 用户，在终端运行以下命令并按提示输入 OpenID；关闭终端重新打开后仍然有效：
+
+```powershell
+$token = Read-Host '请输入 OpenID'
+[Environment]::SetEnvironmentVariable('ECJTU_WEIXIN_TOKEN', $token, 'User')
+$env:ECJTU_WEIXIN_TOKEN = $token
+Remove-Variable token
+```
+
+请在运行 `ecjtu` 或启动 AI Agent 的环境中配置；已运行的终端和 Agent 不会自动获得新设置。OpenID 和含有它的完整链接相当于个人凭证，请勿公开分享。
 
 ### 2. 查询示例
 

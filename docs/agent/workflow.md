@@ -49,7 +49,8 @@ git push origin v0.1.0
 ## 文档同步
 
 - 包职责、依赖方向或跨域查询协议变化：更新 [architecture.md](architecture.md)，检查调用方与依赖方向。
-- CLI 命令、配置、输出、错误、脱敏或 fixture 契约变化：更新 [conventions.md](conventions.md)，检查 [README](../../README.md)、相关测试及 [fixture 登记表](../../testdata/README.md)。
+- CLI 命令、配置、输出、错误、脱敏或 fixture 契约变化：更新 [conventions.md](conventions.md)，检查 [README](../../README.md)、相关测试及 [fixture 登记表](../../testdata/README.md)。检查公开的 [ecjtu-cli Skill](../../skills/ecjtu-cli/SKILL.md)，在同一次变更中同步受影响的高频命令、参数、默认值、凭证要求和示例；新增功能时评估是否纳入常用命令。
+- CLI 安装、更新或发布方式变化：检查 [README](../../README.md) 和 [ecjtu-cli Skill](../../skills/ecjtu-cli/SKILL.md) 的安装命令与使用说明，保持用户入口与实际行为一致。
 - 上游路径、参数、页面判定或结构出现新事实：更新 [upstream.md](upstream.md)，区分样本观察和推断；检查查询、解析、页面判定和脱敏 fixture。原始证据含个人信息，不写入版本库或文档。
 - 领域概念或含义变化：更新 [CONTEXT.md](../../CONTEXT.md)，检查模型、相关契约和引用。
 - 验证命令、开发规则或文档路径变化：更新本文、[Go 规范](go-style.md)或相应入口；移动文档时检查旧链接和新链接。
